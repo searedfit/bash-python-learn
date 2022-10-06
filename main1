@@ -1,0 +1,34 @@
+from scapy.all import *
+import csv
+import time
+
+maxtop=1000
+
+def get_tld(s):
+	for i in range(-1,-len(s)-1,-1):
+		if(s[i]=='.'):
+			break
+	return s[len(s)+i+1:]
+
+#main:
+ftop = csv.reader(open('./top1k.csv','r'))
+count=0;
+tld_list=[]
+for item in ftop:
+	url=item[1]
+	tld=get_tld(url)
+	tld_list.append(tld)
+	print(url+"'s 		tld = "+tld)
+	count=count+1
+	if(count==maxtop):
+		break
+tld_list=(set(tld_list))
+
+#packet=IP(dst=dns_server)/UDP(dport=53)/DNS(qr=0,opcode=0,rd=1,qd=DNSQR(qtype="NS",qname=url))
+dns_server="127.99.1.7"
+conf.L3socket = L3RawSocket
+for tld in tld_list:
+	packet=IP(dst=dns_server)/UDP(dport=53)/DNS(id=RandShort(),rd=1,qd=DNSQR(qtype="NS",qname=tld))
+	send(packet)
+	time.sleep(0.1)
+

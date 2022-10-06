@@ -1,0 +1,38 @@
+#!/bin/bash
+
+#每次实验前修改test_num
+test_num=g6
+path="./result/${test_num}"
+mkdir $path -p
+rm -f $path/*
+cp ./main $path/
+
+unbound-control reload
+#0min:
+declare -i ttl halfttl
+ttl=600
+halfttl=ttl/2
+echo $halfttl
+#nohup #抓取流量
+nohup tcpdump -i lo "dst port 53 && src host 127.99.1.7" -w ${path}/aliyun_10_4_lo_dst_port_53_and_src_host_127_99_1_7.pcap  &>${path}/lo_tcpdump_query.txt &
+nohup tcpdump -i lo "src port 53 && dst host 127.99.1.7" -w ${path}/aliyun_10_4_lo_src_port_53_and_dst_host_127_99_1_7.pcap  &>${path}/lo_tcpdump_response.txt &
+nohup tcpdump -i eth0 "dst port 53 && src portrange 60001-61000" -w ${path}/aliyun_10_4_eth0_dst_port_53_and_src_portrange_60001-61000.pcap &>${path}/eht0_tcpdump_query.txt &
+nohup tcpdump -i eth0 "src port 53 && dst portrange 60001-61000" -w ${path}/aliyun_10_4_eth0_src_port_53_and_dst_portrange_60001-61000.pcap &>${path}/eht0_tcpdump_response.txt &
+
+python3 main1
+echo $halfttl
+sleep $halfttl
+
+#TTL/2
+unbound-control dump_cache>${path}/cache1.txt
+python3 main2
+sleep $halfttl
+
+#TTL
+unbound-control dump_cache>${path}/cache2.txt
+python3 main3
+
+echo "test is over"
+sleep 60
+pkill tcpdump
+

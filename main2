@@ -1,0 +1,21 @@
+from scapy.all import *
+import csv
+import time
+
+maxtop=1000
+
+ftop = csv.reader(open('./top1k.csv','r'))
+dns_server="127.99.1.7"
+conf.L3socket = L3RawSocket
+count=0;
+for item in ftop:
+	url=item[1]
+	url="1."+url
+	count+=1
+	if count==maxtop:
+		break
+	packet=IP(dst=dns_server)/UDP(dport=53)/DNS(id=RandShort(),rd=1,qd=DNSQR(qtype="A",qname=url))
+	send(packet)
+	time.sleep(0.1)
+
+
